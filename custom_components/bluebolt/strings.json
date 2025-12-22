@@ -1,0 +1,27 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up BlueBOLT",
+        "description": "Connect your BlueBOLT-enabled device. You can find the MAC address on the BlueBOLT-CV2 card label or in the device's web interface.",
+        "data": {
+          "host": "IP Address",
+          "mac": "MAC Address",
+          "name": "Name (optional)"
+        },
+        "data_description": {
+          "host": "Local IP address of your device (e.g., 192.168.0.162)",
+          "mac": "Enter the 12-character MAC address. Find this on the CV2 card label or web interface under 'Ethernet Address'.",
+          "name": "Give your device a friendly name like 'AV UPS'. Leave blank to use the IP address."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to device. Check IP and MAC addresses.",
+      "unknown": "Unexpected error occurred"
+    },
+    "abort": {
+      "already_configured": "This device is already configured"
+    }
+  }
+}
