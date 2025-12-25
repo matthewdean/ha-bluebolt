@@ -30,12 +30,22 @@ Required information:
 ## Entities
 
 **M4315-PRO / M4320-PRO:**
-- 4 sensors: voltage, current, power, temperature
-- 8 switches: individual outlet controls (Outlet 1-8)
+- **Sensors**: voltage, current, power, temperature
+- **Switches**: 8 individual outlet controls (Outlet 1-8)
 
 **MB1500 / F1500-UPS / F1500-UPS E:**
-- 6 sensors: voltage, current, power, output voltage, battery level, load level
-- 4 switches: outlet bank controls (Outlet Bank 1-4)
+- **Sensors**: voltage, current, power, output voltage, battery level, load level
+- **Switches**: 4 outlet bank controls (Outlet Bank 1-4)
+
+### Energy Dashboard
+
+The power sensor (watts) can be used with Home Assistant's Energy Dashboard:
+
+1. Go to **Settings → Devices & Services → Helpers**
+2. Click **Create Helper → Integration - Riemann sum integral**
+3. Select your BlueBOLT power sensor
+4. Set method to "Left" and precision to 2
+5. The resulting energy sensor (kWh) can be added to **Settings → Dashboards → Energy → Individual Devices**
 
 ## Supported Devices
 
