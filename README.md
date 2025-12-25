@@ -16,8 +16,6 @@ Copy `custom_components/bluebolt` to your Home Assistant `config/custom_componen
 
 ## Configuration
 
-### Option 1: UI Configuration
-
 Add via **Settings → Devices & Services → Add Integration → BlueBOLT**
 
 Required information:
@@ -25,36 +23,9 @@ Required information:
 - **MAC Address**: CV2 card MAC address (12 hex characters), e.g., `1065a3XXXXXX`
 - **Name**: Optional friendly name
 
-### Option 2: YAML Configuration
-
-Add to your `configuration.yaml`:
-
-```yaml
-bluebolt:
-  - host: 192.168.1.50
-    mac: "1065a3XXXXXX"
-    name: "AV Power Conditioner"
-    outlets:
-      1: "TV"
-      2: "Receiver"
-      3: "Amplifier"
-      4: "Subwoofer"
-      5: "HDMI Matrix"
-
-  - host: 192.168.1.51
-    mac: "1065a3XXXXXX"
-    name: "UPS"
-    outlet_banks:
-      1: "Router"
-      2: "NAS"
-      3: "NVR-1 & NVR-2"
-```
-
 **Notes:**
 - Device type is auto-detected from CV2
-- MAC address should be 12 hex characters
-- Custom outlet/bank names are optional (will default to "Outlet 1", "Outlet Bank 1", etc.)
-- Use `outlets` for M4315/M4320, `outlet_banks` for F1500/MB1500
+- MAC address should be 12 hex characters (no colons or dashes)
 
 ## Entities
 

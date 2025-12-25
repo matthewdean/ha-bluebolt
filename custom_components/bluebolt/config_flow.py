@@ -7,7 +7,6 @@ from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_MAC, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
-import homeassistant.helpers.config_validation as cv
 
 from .const import DOMAIN
 from .device import BlueBoltDevice
@@ -81,29 +80,6 @@ class BlueBoltConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_import(self, import_data: Dict[str, Any]) -> FlowResult:
-        """Handle import from YAML configuration."""
-        try:
-            info = await validate_input(self.hass, import_data)
-        except CannotConnect:
-            _LOGGER.error(
-                "Cannot connect to BlueBOLT device at %s", import_data[CONF_HOST]
-            )
-            return self.async_abort(reason="cannot_connect")
-        except Exception:  # pylint: disable=broad-except
-            _LOGGER.exception("Unexpected exception during YAML import")
-            return self.async_abort(reason="unknown")
-
-        # Set unique ID to prevent duplicate entries
-        await self.async_set_unique_id(
-            f"{import_data[CONF_HOST]}_{import_data[CONF_MAC]}"
-        )
-        self._abort_if_unique_id_configured()
-
-        return self.async_create_entry(
-            title=info["title"],
-            data=import_data,
-        )
 
 
 class CannotConnect(Exception):
