@@ -8,20 +8,20 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
-    CONF_HOST,
     PERCENTAGE,
+    EntityCategory,
+    UnitOfApparentPower,
     UnitOfElectricCurrent,
     UnitOfElectricPotential,
     UnitOfPower,
     UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DEVICE_CONFIG, DOMAIN
 from .coordinator import BlueBoltDataUpdateCoordinator
+from .entity import BlueBoltEntity
 
 
 async def async_setup_entry(
@@ -33,12 +33,19 @@ async def async_setup_entry(
     coordinator: BlueBoltDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
     device_type = coordinator.device.device_type
     device_config = DEVICE_CONFIG.get(device_type, {})
+    data = coordinator.data or {}
 
     entities = [
         BlueBoltVoltageSensor(coordinator, entry),
         BlueBoltCurrentSensor(coordinator, entry),
         BlueBoltPowerSensor(coordinator, entry),
     ]
+
+    # Created only when the device actually reports them.
+    if "apparent_power" in data:
+        entities.append(BlueBoltApparentPowerSensor(coordinator, entry))
+    if "power_factor" in data:
+        entities.append(BlueBoltPowerFactorSensor(coordinator, entry))
 
     if device_config.get("has_temperature_sensor", False):
         entities.append(BlueBoltTemperatureSensor(coordinator, entry))
@@ -53,31 +60,8 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class BlueBoltSensorBase(CoordinatorEntity, SensorEntity):
+class BlueBoltSensorBase(BlueBoltEntity, SensorEntity):
     """Base class for BlueBOLT sensors."""
-
-    def __init__(
-        self,
-        coordinator: BlueBoltDataUpdateCoordinator,
-        entry: ConfigEntry,
-    ) -> None:
-        """Initialize the sensor."""
-        super().__init__(coordinator)
-        self._entry = entry
-        self._attr_has_entity_name = True
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return device information."""
-        device_type = self.coordinator.device.device_type
-        device_config = DEVICE_CONFIG.get(device_type, {})
-        return DeviceInfo(
-            identifiers={(DOMAIN, self._entry.entry_id)},
-            name=self._entry.data.get("name", self._entry.data[CONF_HOST]),
-            manufacturer=device_config.get("manufacturer", "Unknown"),
-            model=device_config.get("model", "Unknown"),
-            sw_version=self.coordinator.device.firmware_version,
-        )
 
 
 class BlueBoltVoltageSensor(BlueBoltSensorBase):
@@ -91,7 +75,7 @@ class BlueBoltVoltageSensor(BlueBoltSensorBase):
     @property
     def unique_id(self) -> str:
         """Return unique ID."""
-        return f"{self._entry.entry_id}_voltage"
+        return f"{self._device_id}_voltage"
 
     @property
     def native_value(self) -> Optional[float]:
@@ -110,7 +94,7 @@ class BlueBoltCurrentSensor(BlueBoltSensorBase):
     @property
     def unique_id(self) -> str:
         """Return unique ID."""
-        return f"{self._entry.entry_id}_current"
+        return f"{self._device_id}_current"
 
     @property
     def native_value(self) -> Optional[float]:
@@ -129,12 +113,51 @@ class BlueBoltPowerSensor(BlueBoltSensorBase):
     @property
     def unique_id(self) -> str:
         """Return unique ID."""
-        return f"{self._entry.entry_id}_power"
+        return f"{self._device_id}_power"
 
     @property
     def native_value(self) -> Optional[float]:
         """Return the state."""
         return self.coordinator.data.get("power")
+
+
+class BlueBoltApparentPowerSensor(BlueBoltSensorBase):
+    """Apparent power sensor."""
+
+    _attr_device_class = SensorDeviceClass.APPARENT_POWER
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = UnitOfApparentPower.VOLT_AMPERE
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_name = "Apparent Power"
+
+    @property
+    def unique_id(self) -> str:
+        """Return unique ID."""
+        return f"{self._device_id}_apparent_power"
+
+    @property
+    def native_value(self) -> Optional[float]:
+        """Return the state."""
+        return self.coordinator.data.get("apparent_power")
+
+
+class BlueBoltPowerFactorSensor(BlueBoltSensorBase):
+    """Power factor sensor."""
+
+    _attr_device_class = SensorDeviceClass.POWER_FACTOR
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_name = "Power Factor"
+
+    @property
+    def unique_id(self) -> str:
+        """Return unique ID."""
+        return f"{self._device_id}_power_factor"
+
+    @property
+    def native_value(self) -> Optional[float]:
+        """Return the state."""
+        return self.coordinator.data.get("power_factor")
 
 
 class BlueBoltTemperatureSensor(BlueBoltSensorBase):
@@ -148,7 +171,7 @@ class BlueBoltTemperatureSensor(BlueBoltSensorBase):
     @property
     def unique_id(self) -> str:
         """Return unique ID."""
-        return f"{self._entry.entry_id}_temperature"
+        return f"{self._device_id}_temperature"
 
     @property
     def native_value(self) -> Optional[float]:
@@ -167,7 +190,7 @@ class BlueBoltVoltageOutSensor(BlueBoltSensorBase):
     @property
     def unique_id(self) -> str:
         """Return unique ID."""
-        return f"{self._entry.entry_id}_voltage_out"
+        return f"{self._device_id}_voltage_out"
 
     @property
     def native_value(self) -> Optional[float]:
@@ -186,7 +209,7 @@ class BlueBoltBatteryLevelSensor(BlueBoltSensorBase):
     @property
     def unique_id(self) -> str:
         """Return unique ID."""
-        return f"{self._entry.entry_id}_battery_level"
+        return f"{self._device_id}_battery_level"
 
     @property
     def native_value(self) -> Optional[float]:
@@ -205,7 +228,7 @@ class BlueBoltLoadLevelSensor(BlueBoltSensorBase):
     @property
     def unique_id(self) -> str:
         """Return unique ID."""
-        return f"{self._entry.entry_id}_load_level"
+        return f"{self._device_id}_load_level"
 
     @property
     def native_value(self) -> Optional[float]:

@@ -6,8 +6,9 @@ Uses [BlueBOLT Advanced Networking](https://classic.mybluebolt.com/support/Advan
 
 ## Features
 
-- Power monitoring every 30 seconds (voltage, current, power, temperature)
-- Individual control of outlets/outlet banks
+- Power monitoring every 30 seconds (voltage, current, power, apparent power, power factor, temperature)
+- Power-quality / safety status (surge protection, over/under-voltage, power fault)
+- Individual control of outlets/outlet banks, plus per-outlet power-cycle and device reboot
 - UI-based configuration
 
 ## Installation
@@ -29,12 +30,22 @@ Required information:
 
 ## Entities
 
+Entities are grouped on the device page using Home Assistant's standard
+categories (primary, **Diagnostic**, **Configuration**).
+
+**All models:**
+- **Sensors** (primary): Voltage, Current, Power
+- **Sensors** (diagnostic): Apparent Power, Power Factor
+- **Binary sensors** (diagnostic, only those a given device reports): Surge
+  Protection, Power Fault, Overvoltage, Undervoltage
+- **Buttons** (configuration): Reboot, plus a Power Cycle button per outlet/bank
+
 **M4315-PRO / M4320-PRO:**
-- **Sensors**: voltage, current, power, temperature
+- Adds a **Temperature** sensor
 - **Switches**: 8 individual outlet controls (Outlet 1-8)
 
 **MB1500 / F1500-UPS / F1500-UPS E:**
-- **Sensors**: voltage, current, power, output voltage, battery level, load level
+- Adds **Output Voltage**, **Battery Level**, **Load Level** sensors
 - **Switches**: 4 outlet bank controls (Outlet Bank 1-4)
 
 ### Energy Dashboard

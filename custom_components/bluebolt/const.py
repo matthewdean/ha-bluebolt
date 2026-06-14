@@ -45,3 +45,9 @@ DEVICE_CONFIG = {
         "has_ups_sensors": True,
     },
 }
+
+
+def max_outlets(device_type):
+    """Return the number of controllable outlets/banks for a device type."""
+    config = DEVICE_CONFIG.get(device_type, {})
+    return config.get("outlets") or config.get("outlet_banks", 8)

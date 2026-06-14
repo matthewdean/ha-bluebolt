@@ -4,14 +4,12 @@ from typing import Any
 
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DEVICE_CONFIG, DOMAIN
+from .const import DEVICE_CONFIG, DOMAIN, max_outlets
 from .coordinator import BlueBoltDataUpdateCoordinator
+from .entity import BlueBoltEntity
 
 
 async def async_setup_entry(
@@ -22,9 +20,7 @@ async def async_setup_entry(
     """Set up BlueBOLT switch entities."""
     coordinator: BlueBoltDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
     device_type = coordinator.device.device_type
-    device_config = DEVICE_CONFIG.get(device_type, {})
-
-    num_switches = device_config.get("outlets") or device_config.get("outlet_banks", 8)
+    num_switches = max_outlets(device_type)
 
     entities = [
         BlueBoltOutletSwitch(coordinator, entry, outlet_id)
@@ -34,7 +30,7 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class BlueBoltOutletSwitch(CoordinatorEntity, SwitchEntity):
+class BlueBoltOutletSwitch(BlueBoltEntity, SwitchEntity):
     """Representation of a BlueBOLT outlet switch."""
 
     def __init__(
@@ -44,13 +40,12 @@ class BlueBoltOutletSwitch(CoordinatorEntity, SwitchEntity):
         outlet_id: int,
     ) -> None:
         """Initialize the switch."""
-        super().__init__(coordinator)
-        self._entry = entry
+        super().__init__(coordinator, entry)
         self._outlet_id = outlet_id
-        self._attr_has_entity_name = True
 
         device_type = coordinator.device.device_type
         device_config = DEVICE_CONFIG.get(device_type, {})
+        self._is_bank = "outlet_banks" in device_config
 
         custom_outlet_names = entry.data.get("outlets", {})
         custom_bank_names = entry.data.get("outlet_banks", {})
@@ -64,7 +59,7 @@ class BlueBoltOutletSwitch(CoordinatorEntity, SwitchEntity):
             self._attr_name = custom_bank_names.get(
                 outlet_id, custom_bank_names.get(str(outlet_id))
             )
-        elif "outlet_banks" in device_config:
+        elif self._is_bank:
             self._attr_name = f"Outlet Bank {outlet_id}"
         else:
             self._attr_name = f"Outlet {outlet_id}"
@@ -75,24 +70,9 @@ class BlueBoltOutletSwitch(CoordinatorEntity, SwitchEntity):
     @property
     def unique_id(self) -> str:
         """Return unique ID."""
-        device_type = self.coordinator.device.device_type
-        device_config = DEVICE_CONFIG.get(device_type, {})
-        if "outlet_banks" in device_config:
-            return f"{self._entry.entry_id}_outlet_bank_{self._outlet_id}"
-        return f"{self._entry.entry_id}_outlet_{self._outlet_id}"
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return device information."""
-        device_type = self.coordinator.device.device_type
-        device_config = DEVICE_CONFIG.get(device_type, {})
-        return DeviceInfo(
-            identifiers={(DOMAIN, self._entry.entry_id)},
-            name=self._entry.data.get("name", self._entry.data[CONF_HOST]),
-            manufacturer=device_config.get("manufacturer", "Unknown"),
-            model=device_config.get("model", "Unknown"),
-            sw_version=self.coordinator.device.firmware_version,
-        )
+        if self._is_bank:
+            return f"{self._device_id}_outlet_bank_{self._outlet_id}"
+        return f"{self._device_id}_outlet_{self._outlet_id}"
 
     @property
     def is_on(self) -> bool:
