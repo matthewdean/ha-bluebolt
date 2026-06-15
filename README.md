@@ -13,6 +13,8 @@ Uses [BlueBOLT Advanced Networking](https://classic.mybluebolt.com/support/Advan
 
 ## Installation
 
+**Requires Home Assistant 2023.12 or newer.**
+
 Copy `custom_components/bluebolt` to your Home Assistant `config/custom_components/` directory and restart.
 
 ## Configuration
